@@ -163,6 +163,13 @@ export function getBetsColumns(
         ),
     },
     {
+      header: lang === "de" ? "Pick" : "Pick",
+      accessorKey: "pick",
+      cell: (info) => info.getValue() || "—",
+      enableColumnFilter: false,
+    },
+
+    {
       accessorKey: "result",
       header: lang === "de" ? "Ergebnis" : "Result",
       cell: ({ row, column }) =>

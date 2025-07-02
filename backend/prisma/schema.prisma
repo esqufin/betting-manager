@@ -28,10 +28,11 @@ model Bet {
   stake         Float
   odds          Float
   betType       String?
+  pick          String?
   result        Int
   currency      String   @default("USD")
   kind          String   @default("Single") // "Single" oder "Multi"
-  multiEntries MultiEntry[]  @relation(onDelete: CASCADE)
+  multiEntries MultiEntry[]  
 }
 
 model MultiEntry {

@@ -54,6 +54,7 @@ export default function Bets() {
     stake: 0,
     odds: 0,
     betType: "",
+    pick: "",
     result: 0,
     currency: "USD",
     kind: "Single",
@@ -170,6 +171,7 @@ export default function Bets() {
     try {
       const created = await createBet(newBet);
       setData((old) => [...old, created]);
+      setMultiEntries([emptyEntry(selectedDate + "T12:00:00.000Z")]);
       setNewBet({
         date: selectedDate + "T12:00:00.000Z",
         channelId: selectedChannelId,
@@ -177,6 +179,7 @@ export default function Bets() {
         stake: 0,
         odds: 0,
         betType: "",
+        pick: "",
         result: 0,
         currency: "USD",
         kind: "Single",

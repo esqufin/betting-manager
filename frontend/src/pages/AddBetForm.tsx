@@ -13,6 +13,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { resultLabels } from "./betConstants";
 import { betTypeOptions, pickOptions } from "./betMarketOptions";
 import type { BetType } from "./betMarketOptions";
+import { Radio, RadioGroup, FormControlLabel } from "@mui/material";
 
 // --- Typ für Subwetten ---
 export type MultiEntryInput = {
@@ -22,6 +23,7 @@ export type MultiEntryInput = {
   odds: number | "";
   goals?: string; // für Toranzahl (Over/Under)
   date: string;
+  result?: number;
 };
 
 // --- Props für AddBetForm ---
@@ -44,6 +46,7 @@ const emptyEntry = (date: string): MultiEntryInput => ({
   odds: "",
   goals: "",
   date,
+  result: 0,
 });
 
 export default function AddBetForm({
@@ -100,32 +103,44 @@ export default function AddBetForm({
 
   return (
     <Box sx={{ border: "1px solid #eee", borderRadius: 2, p: 2, mb: 2 }}>
-      {/* Kopfzeile: Typ-Auswahl und Stake bei Multi */}
+      {/* Kopfzeile: Typ-Auswahl und Einsatz immer sichtbar */}
       <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <Select
+        <RadioGroup
+          row
           value={type}
           onChange={(e) => setType(e.target.value as "Single" | "Multi")}
-          size="small"
-          sx={{ minWidth: 100 }}
+          sx={{ mr: 2 }}
         >
-          <MenuItem value="Single">Single</MenuItem>
-          <MenuItem value="Multi">Multi</MenuItem>
-        </Select>
-        {type === "Multi" && (
-          <TextField
-            label={lang === "de" ? "Einsatz" : "Stake"}
-            size="small"
-            type="number"
-            value={newBet.stake}
-            onChange={(e) =>
-              setNewBet((prev) => ({
-                ...prev,
-                stake: Number(e.target.value),
-              }))
-            }
-            sx={{ width: 100 }}
-          />
-        )}
+          <FormControlLabel value="Single" control={<Radio />} label="Single" />
+          <FormControlLabel value="Multi" control={<Radio />} label="Multi" />
+        </RadioGroup>
+        <TextField
+          label={lang === "de" ? "Einsatz" : "Stake"}
+          size="small"
+          type="number"
+          value={newBet.stake}
+          onChange={(e) =>
+            setNewBet((prev) => ({
+              ...prev,
+              stake: Number(e.target.value),
+            }))
+          }
+          sx={{ width: 100 }}
+          inputProps={{
+            inputMode: "decimal",
+            pattern: "[0-9]*",
+            style: { MozAppearance: "textfield" },
+          }}
+        />
+        <TextField
+          label="Currency"
+          size="small"
+          value={newBet.currency}
+          onChange={(e) =>
+            setNewBet((prev) => ({ ...prev, currency: e.target.value }))
+          }
+          sx={{ width: 80 }}
+        />
         {type === "Multi" && totalOdds > 0 && (
           <Typography>
             {lang === "de" ? "Gesamtquote" : "Total odds"}:{" "}
@@ -181,12 +196,31 @@ export default function AddBetForm({
             label="Odds"
             size="small"
             type="number"
-            value={newBet.odds}
+            value={newBet.odds === 0 ? "" : newBet.odds}
+            onFocus={() => {
+              if (newBet.odds === 0) {
+                setNewBet((prev) => ({ ...prev, odds: "" }));
+              }
+            }}
+            onBlur={(e) => {
+              if (e.target.value === "") {
+                setNewBet((prev) => ({ ...prev, odds: 0 }));
+              }
+            }}
             onChange={(e) =>
-              setNewBet((prev) => ({ ...prev, odds: Number(e.target.value) }))
+              setNewBet((prev) => ({
+                ...prev,
+                odds: e.target.value === "" ? "" : Number(e.target.value),
+              }))
             }
             sx={{ width: 80 }}
+            inputProps={{
+              inputMode: "decimal",
+              pattern: "[0-9]*",
+              style: { MozAppearance: "textfield" },
+            }}
           />
+
           <TextField
             type="date"
             label={lang === "de" ? "Spiel-Datum" : "Match Date"}
@@ -219,15 +253,7 @@ export default function AddBetForm({
               </MenuItem>
             ))}
           </Select>
-          <TextField
-            label="Currency"
-            size="small"
-            value={newBet.currency}
-            onChange={(e) =>
-              setNewBet((prev) => ({ ...prev, currency: e.target.value }))
-            }
-            sx={{ width: 80 }}
-          />
+
           <Button variant="contained" onClick={onAdd} disabled={loading}>
             {lang === "de" ? "Wettschein anlegen" : "Add Bet"}
           </Button>
@@ -314,6 +340,22 @@ export default function AddBetForm({
                 sx={{ width: 140 }}
                 InputLabelProps={{ shrink: true }}
               />
+              <Select
+                value={entry.result?.toString() ?? "0"}
+                onChange={(e) =>
+                  handleEntryChange(idx, "result", e.target.value)
+                }
+                size="small"
+                sx={{ minWidth: 120 }}
+                label={lang === "de" ? "Ergebnis" : "Result"}
+              >
+                {resultLabels[lang].map((label, i) => (
+                  <MenuItem key={i} value={i.toString()}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+
               <IconButton
                 onClick={() => handleRemoveEntry(idx)}
                 disabled={multiEntries.length === 1}

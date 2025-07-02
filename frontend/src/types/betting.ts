@@ -8,6 +8,7 @@ export type Bet = {
   stake: number;
   odds: number;
   betType: string;
+  pick: string;
   result: number;
   currency: string;
   kind: string;
