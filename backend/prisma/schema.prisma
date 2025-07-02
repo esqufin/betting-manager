@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Channel {
+  id          Int      @id @default(autoincrement())
+  name        String
+  cashback    Float?
+  type        String
+  period      String?
+  weekStart   String?
+  monthStart  Int?
+  bets        Bet[]
+  transactions Transaction[]
+}
+
+model Bet {
+  id            Int      @id @default(autoincrement())
+  date          DateTime
+  channelId     Int
+  channel       Channel  @relation(fields: [channelId], references: [id])
+  match         String?
+  stake         Float
+  odds          Float
+  betType       String?
+  result        Int
+  currency      String   @default("USD")
+  kind          String   @default("Single") // "Single" oder "Multi"
+  multiEntries MultiEntry[]  @relation(onDelete: CASCADE)
+}
+
+model MultiEntry {
+  id       Int    @id @default(autoincrement())
+  betId    Int
+  match    String
+  odds     Float
+  pick     String
+  date     DateTime
+  Bet      Bet    @relation(fields: [betId], references: [id])
+}
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  channelId  Int
+  channel    Channel  @relation(fields: [channelId], references: [id])
+  amount     Float
+  currency   String   @default("USD")
+  date       DateTime
+  comment    String?
+  correction Float?
+  fxRate     Float?
+}
