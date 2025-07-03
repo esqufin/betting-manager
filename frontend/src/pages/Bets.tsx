@@ -19,6 +19,7 @@ import {
 import type { MultiEntryInput } from "./AddBetForm";
 import type { Bet, Channel } from "../types/betting";
 import { getBetsColumns } from "./betsColumns";
+import { resultLabels } from "./betConstants";
 
 function emptyEntry(date: string): MultiEntryInput {
   return {
@@ -28,6 +29,35 @@ function emptyEntry(date: string): MultiEntryInput {
     pick: "",
     date,
   };
+}
+
+function MultiEntriesTable({ entries, lang }) {
+  return (
+    <table style={{ width: "100%", marginLeft: 30 }}>
+      <thead>
+        <tr>
+          <th>Match</th>
+          <th>Odds</th>
+          <th>Pick</th>
+          <th>{lang === "de" ? "Ergebnis" : "Result"}</th>
+          <th>{lang === "de" ? "Typ" : "Type"}</th>
+          {/* Optional: weitere Spalten */}
+        </tr>
+      </thead>
+      <tbody>
+        {entries.map((entry, i) => (
+          <tr key={i}>
+            <td>{entry.match}</td>
+            <td>{Number(entry.odds).toFixed(2)}</td>
+            <td>{entry.pick}</td>
+            <td>{resultLabels[lang][entry.result ?? 5] || "—"}</td>
+            <td>Sub-Bet</td>
+            {/* Optional: weitere Zellen */}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 export default function Bets() {
@@ -204,6 +234,10 @@ export default function Bets() {
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     getRowId: (row) => row.id.toString(),
+    getRowCanExpand: (row) =>
+      row.original.kind === "Multi" &&
+      Array.isArray(row.original.multiEntries) &&
+      row.original.multiEntries.length > 0,
   });
 
   return (
@@ -291,26 +325,44 @@ export default function Bets() {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td
-                  key={cell.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: 8,
-                    background:
-                      editingCell && editingCell.rowId === row.original.id
-                        ? "#fffbe6"
-                        : "#fff",
-                    minWidth: 80,
-                    maxWidth: 180,
-                    overflowWrap: "break-word",
-                  }}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
+            <React.Fragment key={row.id}>
+              <tr>
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: 8,
+                      background:
+                        editingCell && editingCell.rowId === row.original.id
+                          ? "#fffbe6"
+                          : "#fff",
+                      minWidth: 80,
+                      maxWidth: 180,
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+              {/* NEU: Expanded Row für MultiEntries */}
+              {row.getIsExpanded?.() &&
+                Array.isArray(row.original.multiEntries) &&
+                row.original.multiEntries.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      style={{ padding: 0, background: "#f8f8f8" }}
+                    >
+                      <MultiEntriesTable
+                        entries={row.original.multiEntries}
+                        lang={lang}
+                      />
+                    </td>
+                  </tr>
+                )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>

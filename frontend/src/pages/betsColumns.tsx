@@ -408,5 +408,23 @@ export function getBetsColumns(
         return ggr.toFixed(2) + " " + bet.currency;
       },
     },
+    {
+      id: "expander",
+      header: "",
+      size: 30,
+      cell: ({ row }) =>
+        row.original.kind === "Multi" &&
+        Array.isArray(row.original.multiEntries) &&
+        row.original.multiEntries.length > 0 ? (
+          <span
+            style={{ cursor: "pointer", userSelect: "none" }}
+            onClick={() => row.toggleExpanded()}
+          >
+            {row.getIsExpanded ? (row.getIsExpanded() ? "▼" : "▶") : "▶"}
+          </span>
+        ) : null,
+      enableSorting: false,
+      enableColumnFilter: false,
+    },
   ];
 }
