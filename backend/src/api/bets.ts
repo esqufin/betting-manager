@@ -16,7 +16,11 @@ router.use((req, res, next) => {
 // Alle Wettscheine holen
 router.get("/", async (req, res) => {
   try {
-    const bets = await prisma.bet.findMany();
+    /*     const bets = await prisma.bet.findMany();
+    res.json(bets); */
+    const bets = await prisma.bet.findMany({
+      include: { multiEntries: true },
+    });
     res.json(bets);
   } catch (err) {
     res
@@ -27,27 +31,39 @@ router.get("/", async (req, res) => {
 
 // Neuen Wettschein anlegen
 router.post("/", async (req, res) => {
-  console.log("ROUTER POST AUFGERUFEN", req.body); // <--- Test-Log!
   try {
-    const { id, ...data } = req.body;
-    const newBet = await prisma.bet.create({ data });
+    const { id, multiEntries, ...data } = req.body;
+    let newBet;
+    if (
+      data.kind === "Multi" &&
+      Array.isArray(multiEntries) &&
+      multiEntries.length
+    ) {
+      newBet = await prisma.bet.create({
+        data: {
+          ...data,
+          multiEntries: {
+            create: multiEntries.map((entry) => ({
+              match: entry.match,
+              odds: entry.odds,
+              pick: entry.pick,
+              date: new Date(entry.date),
+            })),
+          },
+        },
+        include: { multiEntries: true }, // damit Response gleich Subwetten enthält
+      });
+    } else {
+      newBet = await prisma.bet.create({ data });
+    }
     res.status(201).json(newBet);
   } catch (err) {
     if (err instanceof Error) {
-      console.error(
-        "Fehler beim Anlegen des Wettscheins:",
-        err.message,
-        err.stack
-      );
       res.status(400).json({
         error: err.message,
         details: err.stack,
       });
     } else {
-      console.error(
-        "Fehler beim Anlegen des Wettscheins (unknown error):",
-        err
-      );
       res.status(400).json({
         error: "Fehler beim Anlegen des Wettscheins (unknown error)",
         details: err,
@@ -60,7 +76,7 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const betId = Number(req.params.id);
-    const { id, ...data } = req.body;
+    const { id, multiEntries, ...data } = req.body;
     const updatedBet = await prisma.bet.update({
       where: { id: betId },
       data,

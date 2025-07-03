@@ -164,12 +164,18 @@ export default function Bets() {
   }
 
   async function handleAdd() {
+    const betToAdd = {
+      ...newBet,
+      kind: type,
+      multiEntries: type === "Multi" ? multiEntries : [],
+    };
+
     if (!newBet.channelId) {
       alert("Bitte einen Channel auswählen!");
       return;
     }
     try {
-      const created = await createBet(newBet);
+      const created = await createBet(betToAdd); // <-- HIER das neue Objekt!
       setData((old) => [...old, created]);
       setMultiEntries([emptyEntry(selectedDate + "T12:00:00.000Z")]);
       setNewBet({
@@ -182,7 +188,7 @@ export default function Bets() {
         pick: "",
         result: 0,
         currency: "USD",
-        kind: "Single",
+        kind: type,
       });
     } catch (err: any) {
       alert(err.message);

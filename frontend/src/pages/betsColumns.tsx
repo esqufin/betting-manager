@@ -18,10 +18,21 @@ export function getBetsColumns(
     {
       accessorKey: "match",
       header: "Match",
-      cell: ({ row, column }) =>
-        editingCell &&
-        editingCell.rowId === row.original.id &&
-        editingCell.colId === column.id ? (
+      cell: ({ row, column }) => {
+        // Anzeige-Logik extrahiert
+        let matchDisplay;
+        if (
+          row.original.kind === "Multi" &&
+          (!row.original.match || row.original.match.trim() === "")
+        ) {
+          matchDisplay = "(...)";
+        } else {
+          matchDisplay = row.original.match || "[leer]";
+        }
+
+        return editingCell &&
+          editingCell.rowId === row.original.id &&
+          editingCell.colId === column.id ? (
           <TextField
             value={editValue}
             size="small"
@@ -50,13 +61,17 @@ export function getBetsColumns(
             }}
             style={{
               cursor: "pointer",
-              color: !row.original.match ? "#bbb" : "inherit",
+              color: matchDisplay === "[leer]" ? "#bbb" : "inherit",
             }}
           >
-            {row.original.match || "[leer]"}
+            {matchDisplay}
           </span>
-        ),
+        );
+      },
     },
+
+    // ... (restliche Spaltendefinitionen wie gehabt)
+
     {
       accessorKey: "stake",
       header: "Stake",
@@ -105,6 +120,17 @@ export function getBetsColumns(
       accessorKey: "odds",
       header: "Odds",
       cell: ({ row }) => {
+        // Debug: Logge alle MultiEntries beim Rendern
+        if (
+          row.original.kind === "Multi" &&
+          Array.isArray(row.original.multiEntries)
+        ) {
+          console.log(
+            "multiEntries für Bet",
+            row.original.id,
+            row.original.multiEntries
+          );
+        }
         // --- NEU: Multi-Bet Odds dynamisch berechnen ---
         if (
           row.original.kind === "Multi" &&
@@ -120,6 +146,7 @@ export function getBetsColumns(
         return row.original.odds;
       },
     },
+
     {
       accessorKey: "betType",
       header: "Bet Type",
@@ -163,9 +190,46 @@ export function getBetsColumns(
         ),
     },
     {
-      header: lang === "de" ? "Pick" : "Pick",
       accessorKey: "pick",
-      cell: (info) => info.getValue() || "—",
+      header: lang === "de" ? "Pick" : "Pick",
+      cell: ({ row, column }) =>
+        editingCell &&
+        editingCell.rowId === row.original.id &&
+        editingCell.colId === column.id ? (
+          <TextField
+            value={editValue}
+            size="small"
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={async () => {
+              await handleEdit(row.original, column.id as keyof Bet, editValue);
+              setEditingCell(null);
+            }}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                await handleEdit(
+                  row.original,
+                  column.id as keyof Bet,
+                  editValue
+                );
+                setEditingCell(null);
+              }
+            }}
+            autoFocus
+          />
+        ) : (
+          <span
+            onDoubleClick={() => {
+              setEditingCell({ rowId: row.original.id, colId: column.id });
+              setEditValue(row.original.pick || "");
+            }}
+            style={{
+              cursor: "pointer",
+              color: !row.original.pick ? "#bbb" : "inherit",
+            }}
+          >
+            {row.original.pick || "—"}
+          </span>
+        ),
       enableColumnFilter: false,
     },
 
